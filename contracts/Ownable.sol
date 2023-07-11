@@ -9,4 +9,9 @@ contract ownable{
         owner = msg.sender;
     }
 
+    modifier isOwner{
+        require(msg.sender == owner,"Not a Owner");
+        _;
+    }
+
 }

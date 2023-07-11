@@ -10,13 +10,8 @@ contract SharedWallet is NewOwner{
 
     uint public contractBalance;
 
-    struct walletData{
-        uint value;
-        uint timestamp;
-    }
-
     struct walletBalance{
-        walletData data;
+        uint value;
         uint balance;
     }
 
@@ -29,13 +24,16 @@ contract SharedWallet is NewOwner{
         string _description
     );
 
+    modifier addressNotOwner(address _address){
+        require(_address != owner,"Address should Not be a Owner");
+        _;
+    }
+
     // ------------------------------------------------------------
 
-    function setAllowance(address _address, uint _amount) public{
-        require(msg.sender == owner,"Not a Owner");
-        require(_address != owner,"Address should Not be a Owner");
+    function setAllowance(address _address, uint _amount) public isOwner addressNotOwner(_address){
         wallet[_address].balance = _amount;
-        wallet[_address].data.value = _amount;
+        wallet[_address].value = _amount;
 
         emit allowanceDetails(
             _address, 
@@ -47,40 +45,36 @@ contract SharedWallet is NewOwner{
 
     // ------------------------------------------------------------
 
-    function increaseAllowance(address _address, uint _amount) public{
-        require(msg.sender == owner,"Not a Owner");
-        require(_address != owner,"Address should Not be a Owner");
+    function increaseAllowance(address _address, uint _amount) public isOwner addressNotOwner(_address){
         wallet[_address].balance += _amount;
-        wallet[_address].data.value = _amount;
+        wallet[_address].value = _amount;
 
         emit allowanceDetails(
             _address, 
             _amount, 
             wallet[_address].balance, 
-            "Set new Allowance"
+            "Increased Allowance"
         );
     }
 
     // ------------------------------------------------------------
 
-    function decreaseAllowance(address _address, uint _amount) public{
-        require(msg.sender == owner,"Not a Owner");
-        require(_address != owner,"Address should Not be a Owner");
+    function decreaseAllowance(address _address, uint _amount) public isOwner addressNotOwner(_address){
         require(wallet[_address].balance >= _amount,"Balance is less than amount");
         wallet[_address].balance -= _amount;
-        wallet[_address].data.value = _amount;
+        wallet[_address].value = _amount;
 
         emit allowanceDetails(
             _address, 
             _amount, 
             wallet[_address].balance, 
-            "Set new Allowance"
+            "Decreased Allowance"
         );
     }
 
     // ------------------------------------------------------------
 
-    function transferAmount(address payable _to, uint _amount) public{
+    function transferAllowance(address payable _to, uint _amount) public{
         require(contractBalance >= _amount,"Not sufficient balance in contract!");
         if(msg.sender == owner){
             contractBalance -= _amount;
@@ -88,8 +82,7 @@ contract SharedWallet is NewOwner{
         }
         if(wallet[msg.sender].balance >= _amount){
             wallet[msg.sender].balance -= _amount;
-            wallet[msg.sender].data.value = _amount;
-            wallet[msg.sender].data.timestamp = block.timestamp;
+            wallet[msg.sender].value = _amount;
             contractBalance -= _amount;
             _to.transfer(_amount);
         }
